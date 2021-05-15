@@ -1,0 +1,235 @@
+---
+title: "Visualización datos Fifa Práctica"
+author: "Javier Plo Moreno"
+date: "Mayo 2021"
+output:
+  pdf_document: 
+    keep_tex: yes
+    toc: yes
+    toc_depth: 4
+  word_document:
+    toc: yes
+    toc_depth: '2'
+  html_document:
+    highlight: default
+    number_sections: no
+    theme: cosmo
+    toc: yes
+    toc_depth: 2
+---
+
+
+# 1 - LECTURA DEL FICHERO Y PREPARACIÓN DE LOS DATOS
+
+El conjunto de datos players_20.csv se encuentra disponible en la plataforma Kaggle: https://www.kaggle.com/stefanoleone992/fifa-20-complete-player-dataset?select=players_20.csv
+
+
+Este conjunto de datos contiene el estilo de juego del videojuego de consola Fifa 2020, así como estadísticas reales de los jugadores de futbol. El conjunto de datos contiene más de 18,278 registros y 104 variables, combinando datos categóricos y cuantitativos.
+
+Algunas de las variables que contiene el dataset son:
+
+•	long_name(Nombre del jugador)
+•	nationality (Nacionalidad del jugador)
+•	nation_position (Posición de juego en equipo nacional).
+•	club (Nombre del club)
+•	overall (Valoración global del jugador, entre 0 y 100)
+•	potential(Potencial del jugador, entre 0 y 100)
+•	value_eur (Valor en euros del jugador)
+•	wage_eur (Salario del jugador)
+•	age (Edad)
+•	international_reputation( Reputación internacional)
+•	release_clause_eur  (Cláusula de rescisión en euros)
+•	work_rate (valoración cualitativa en términos de ataque-defensa)
+•	weak_foot (valoración de 1 a 5 de control y potencia de la pierna no preferida)
+•	preffered_foot (Pie preferido)
+•	…
+
+El resto de variables hacen referencia a otros atributos del jugador.
+
+La descripción de los atributos se puede consultar en https://www.fifplay.com/encyclopedia/
+
+La descripción de las abreviaturas de la posición del jugador en el campo se puede consultar en https://www.dtgre.com/2016/10/fifa-17-position-abbreviations-acronyms.html
+
+
+
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+# Lectura de los datos
+
+fifa <- read.csv("players_20.csv",header = TRUE,encoding="UTF-8")
+
+```
+
+```{r,eval=TRUE,echo=TRUE}
+
+# Tipos de datos asignados a cada campo
+
+sapply(fifa, function(x) class(x))
+
+
+```
+
+
+
+Vamos a ver algunos datos sobre cada variable:
+
+```{r,eval=TRUE,echo=TRUE}
+
+summary(fifa)
+
+```
+
+
+
+# 1.2 - CLASIFICACIÓN DE LOS JUGADORES
+
+
+La variable Rating indica la calidad del jugador de la siguiente forma: **Excelente de 90 a 99**, **Muy bueno de 80 a 89**, **Bueno de 70 a 79**, **Regular de 50 a 69**, **Malo de 40 a 49**, **Muy malo de 0 a 39**. Cread una variable categórica denominada ***clasificacion***, que clasifique al jugador en una de estas categorías.
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+fifa <- cbind(fifa,clasificacion=c(""))
+
+fifa$clasificacion[fifa$overall >= 90 & fifa$overall <= 99]  <- "Excelente"
+fifa$clasificacion[fifa$overall >= 80 & fifa$overall <= 89]  <- "Muy bueno"
+fifa$clasificacion[fifa$overall >= 70 & fifa$overall <= 79]  <- "Bueno"
+fifa$clasificacion[fifa$overall >= 50 & fifa$overall <= 69]  <- "Regular"
+fifa$clasificacion[fifa$overall >= 40 & fifa$overall <= 49]  <- "Malo"
+fifa$clasificacion[fifa$overall >= 0 & fifa$overall <= 39]   <- "Muy malo"
+
+```
+
+
+Vamos a clasificar a los jugadores según su edad:
+
+o	**Muy jóvenes (16-19)**
+o	**Jóvenes (20-29)**
+o	**Experimentados (30-35)**
+o	**Muy Experimentados (>35)**
+
+
+Para ello crearemos una variable rangoedad:
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+fifa <- cbind(fifa,rangoedad=c(""))
+
+fifa$rangoedad[fifa$age >= 16 & fifa$age <= 19]  <- "Muy joven"
+fifa$rangoedad[fifa$age >= 20 & fifa$age <= 29]  <- "Joven"
+fifa$rangoedad[fifa$age >= 30 & fifa$age <= 35]  <- "Experimentado"
+fifa$rangoedad[fifa$age >= 35]  <- "Muy experimentado"
+
+```
+
+
+Vamos a clasificar a los jugadores en base a si son internacionales o no:
+
+Para ello, crearemos una variable internacional que indique si el jugador es internacional, es decir, si está en la selección nacional. La variable internacional debe codificarse como una variable dicotómica, que toma el valor 0 cuando el jugador no tiene dorsal en la selección (valor ausente en nation_jersey_number) y 1 cuando tiene dorsal (valor en nation_jersey_number).
+
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+fifa <- cbind(fifa,internacional=c(as.numeric(0)))  
+
+fifa$internacional[fifa$nation_jersey_number != 0]  <- 1
+
+```
+
+
+Vamos a clasificar a los jugadores por pertenecer a clubes de la superliga o no:
+
+Para ello crearemos una variable superliga:
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+fifa <- cbind(fifa,superliga=c(as.numeric(0)))  
+
+fifa$superliga[fifa$club == "FC Barcelona" | fifa$club == "Atlético Madrid" | fifa$club == "Real Madrid" | fifa$club == "Manchester United" |  fifa$club == "Liverpool" | fifa$club == "Arsenal" | fifa$club == "Chelsea" | fifa$club == "Manchester City" | fifa$club == "Tottenham"  | fifa$club == "Juventus" | fifa$club == "Milan" | fifa$club == "Inter"]  <- 1
+
+```
+
+# 2 - ESTADÍSTICA DESCRIPTIVA Y VISUALIZACIÓN
+
+
+# 2.1 - ANÁLISIS DESCRIPTIVO
+
+
+El Número de observaciones es:
+
+```{r,eval=TRUE,echo=TRUE}
+
+nrow(fifa)
+
+```
+
+El Número de variables es:
+
+```{r,eval=TRUE,echo=TRUE}
+
+ncol(fifa)
+
+```
+
+El número de clubs es: :
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+length(unique(fifa$club))
+
+```
+
+
+El número de nacionalidades es :
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+length(unique(fifa$nationality))
+
+```
+
+
+# 2.2 - VALORES AUSENTES
+
+
+Vamos a comprobar si tenemos ceros y/o elementos vacíos
+
+```{r,eval=TRUE,echo=TRUE}
+
+# Comprobamos valores ausentes
+
+colSums(is.na(fifa) | fifa=="")
+
+```
+
+No se eliminan los valores ausentes de la variable nation_jersey_number ya que dichos valores indican que el jugador no ha jugado nunca en en el equipo nacional.
+
+
+```{r,eval=TRUE,echo=TRUE}
+
+# Comprobamos valores nulos
+
+sapply(fifa, function(x) sum(is.null(x)))
+
+```
+
+
+Exportamos los datos preprocesados a un fichero .csv
+
+```{r,eval=TRUE,echo=TRUE}
+
+# Exportación de los datos preprocesados a un fichero .csv
+
+write.csv(fifa,"players_20_final.csv")
+
+```
+
+
+
